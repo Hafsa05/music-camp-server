@@ -29,12 +29,29 @@ async function run() {
 		await client.connect();
 
 		const classesCollection = client.db("musicCampDb").collection("classes");
-		
-		// classes collecion 
+		const instructorsCollection = client.db("musicCampDb").collection("instructors");
+		const usersCollection = client.db("musicCampDb").collection("users");
+
+		// classes collection 
 		app.get('/classes', async (req, res) => {
 			const result = await classesCollection.find().toArray();
 			res.send(result);
 		})
+
+		// instructor data 
+		app.get('/instructors', async (req, res) => {
+			const result = await instructorsCollection.find().toArray();
+			res.send(result);
+		})
+
+		// users data save from login 
+		app.post('/users', async (req, res) => {
+			const user = req.body;
+			console.log(user);
+			const result = await usersCollection.insertOne(user);
+			res.send(result);
+		})
+
 
 
 		// Send a ping to confirm a successful connection
