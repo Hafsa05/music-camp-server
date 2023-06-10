@@ -45,6 +45,7 @@ async function run() {
 			res.send(result);
 		})
 
+		// userCollection apis 
 		// users data save from signup
 		app.post('/users', async (req, res) => {
 			const user = req.body;
@@ -59,10 +60,49 @@ async function run() {
 			res.send(result);
 		})
 
+		// get all users data from server 
 		app.get('/users', async (req, res) => {
 			const result = await usersCollection.find().toArray();
 			res.send(result);
 		})
+
+		// make admin 
+		app.patch('/users/admin/:id', async (req, res) => {
+			const id = req.params.id;
+			const filter = { _id: new ObjectId(id) };
+			console.log(filter);
+			const updateDoc = {
+				$set: {
+					role: 'Admin'
+				},
+			};
+			const result = await usersCollection.updateOne(filter, updateDoc)
+			res.send(result)
+		})
+
+		//  make instructor 
+		app.patch('/users/instructor/:id', async (req, res) => {
+			const id = req.params.id;
+			const filter = { _id: new ObjectId(id) };
+			console.log(filter);
+			const updateDoc = {
+				$set: {
+					role: 'Instructor'
+				},
+			};
+			const result = await usersCollection.updateOne(filter, updateDoc)
+			res.send(result)
+		})
+
+		// delete any user 
+		app.delete('/users/:id', async (req, res) => {
+			const id = req.params.id;
+			const query = { _id: new ObjectId(id) };
+			const result = await usersCollection.deleteOne(query);
+			res.send(result);
+		})
+
+
 
 		// courseCarts collection
 		// add a course to courseCart
@@ -114,3 +154,6 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
 	console.log(`Music Camp is running on port ${port}`);
 })
+
+
+
