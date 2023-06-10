@@ -11,7 +11,7 @@ app.use(express.json());
 
 // mongodb driver connection code part 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.afx5ss3.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -31,7 +31,7 @@ async function run() {
 		const classesCollection = client.db("musicCampDb").collection("classes");
 		const instructorsCollection = client.db("musicCampDb").collection("instructors");
 		const usersCollection = client.db("musicCampDb").collection("users");
-		const cartCollection = client.db("musicCampDb").collection("carts");
+		const courseCartCollection = client.db("musicCampDb").collection("courseCart");
 
 		// classes collection 
 		app.get('/classes', async (req, res) => {
@@ -64,24 +64,34 @@ async function run() {
 			res.send(result);
 		})
 
-		// carts collection 
-		app.post('/carts', async (req, res) => {
-			const item = req.body;
-			console.log(item);
-			const result = await cartCollection.insertOne(item);
+		// courseCarts collection
+		// add a course to courseCart
+		app.post('/course-cart', async (req, res) => {
+			const course = req.body;
+			console.log(course);
+			const result = await courseCartCollection.insertOne(course);
 			res.send(result);
 		})
 
-		app.get('/carts', async (req, res) => {
+		//  get all courses from courseCart
+		app.get('/course-cart', async (req, res) => {
 			const email = req.query.email;
 			// console.log(email);
 			if (!email) {
 				res.send([]);
 			}
 			const query = { email: email };
-			const result = await cartCollection.find(query).toArray();
+			const result = await courseCartCollection.find(query).toArray();
 			res.send(result);
 		});
+
+		// delete one course from courseCart
+		app.delete('/course-cart/:id', async (req, res) => {
+			const id = req.params.id;
+			const query = { _id: new ObjectId(id) };
+			const result = await courseCartCollection.deleteOne(query);
+			res.send(result);
+		})
 
 
 		// Send a ping to confirm a successful connection
