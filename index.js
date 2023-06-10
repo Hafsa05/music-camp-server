@@ -31,6 +31,7 @@ async function run() {
 		const classesCollection = client.db("musicCampDb").collection("classes");
 		const instructorsCollection = client.db("musicCampDb").collection("instructors");
 		const usersCollection = client.db("musicCampDb").collection("users");
+		const cartCollection = client.db("musicCampDb").collection("carts");
 
 		// classes collection 
 		app.get('/classes', async (req, res) => {
@@ -44,7 +45,7 @@ async function run() {
 			res.send(result);
 		})
 
-		// users data save from login 
+		// users data save from signup
 		app.post('/users', async (req, res) => {
 			const user = req.body;
 			// console.log(user);
@@ -58,6 +59,29 @@ async function run() {
 			res.send(result);
 		})
 
+		app.get('/users', async (req, res) => {
+			const result = await usersCollection.find().toArray();
+			res.send(result);
+		})
+
+		// carts collection 
+		app.post('/carts', async (req, res) => {
+			const item = req.body;
+			console.log(item);
+			const result = await cartCollection.insertOne(item);
+			res.send(result);
+		})
+
+		app.get('/carts', async (req, res) => {
+			const email = req.query.email;
+			// console.log(email);
+			if (!email) {
+				res.send([]);
+			}
+			const query = { email: email };
+			const result = await cartCollection.find(query).toArray();
+			res.send(result);
+		});
 
 
 		// Send a ping to confirm a successful connection
