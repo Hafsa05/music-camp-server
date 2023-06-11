@@ -2,12 +2,28 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 require('dotenv').config();
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 
 // middleware
 app.use(cors());
 app.use(express.json());
 
+// jwt token varification middleware function
+const verifyJWT = (req, res, next) => {
+	const authorization = req.headers.authorization;
+	if (!authorization) {
+		return res.status(401).send({ error: true, message: 'Unauthorized Access' });
+	}
+	const token = authorization.split(' ')[1];
+	jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+		if (err) {
+			return res.status(401).send({ error: true, message: 'Unauthorized Access' })
+		}
+		req.decoded = decoded;
+		next();
+	})
+}
 
 // mongodb driver connection code part 
 
@@ -70,7 +86,7 @@ async function run() {
 		app.patch('/users/admin/:id', async (req, res) => {
 			const id = req.params.id;
 			const filter = { _id: new ObjectId(id) };
-			console.log(filter);
+			// console.log(filter);
 			const updateDoc = {
 				$set: {
 					role: 'Admin'
@@ -84,7 +100,7 @@ async function run() {
 		app.patch('/users/instructor/:id', async (req, res) => {
 			const id = req.params.id;
 			const filter = { _id: new ObjectId(id) };
-			console.log(filter);
+			// console.log(filter);
 			const updateDoc = {
 				$set: {
 					role: 'Instructor'
@@ -108,18 +124,24 @@ async function run() {
 		// add a course to courseCart
 		app.post('/course-cart', async (req, res) => {
 			const course = req.body;
-			console.log(course);
+			// console.log(course);
 			const result = await courseCartCollection.insertOne(course);
 			res.send(result);
 		})
 
-		//  get all courses from courseCart
+		//  get all courses from courseCart to show in selected courses
 		app.get('/course-cart', async (req, res) => {
 			const email = req.query.email;
 			// console.log(email);
 			if (!email) {
 				res.send([]);
 			}
+
+			// const decodedEmail = req.decoded.email;
+			// if (email !== decodedEmail) {
+			// 	return res.status(403).send({ error: true, message: 'Forbidden Access' })
+			// }
+			
 			const query = { email: email };
 			const result = await courseCartCollection.find(query).toArray();
 			res.send(result);
@@ -131,6 +153,13 @@ async function run() {
 			const query = { _id: new ObjectId(id) };
 			const result = await courseCartCollection.deleteOne(query);
 			res.send(result);
+		})
+
+		// jwt token generate  
+		app.post('/jwt-token', (req, res) => {
+			const user = req.body;
+			const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '24h' });
+			res.send({ token });
 		})
 
 
@@ -154,6 +183,3 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
 	console.log(`Music Camp is running on port ${port}`);
 })
-
-
-
