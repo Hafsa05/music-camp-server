@@ -43,7 +43,8 @@ const client = new MongoClient(uri, {
 async function run() {
 	try {
 		// Connect the client to the server	(optional starting in v4.7)
-		await client.connect();
+		// await client.connect();
+		client.connect();
 
 		const classesCollection = client.db("musicCampDb").collection("classes");
 		const instructorsCollection = client.db("musicCampDb").collection("instructors");
@@ -77,6 +78,16 @@ async function run() {
 			};
 			const result = await classesCollection.updateOne(filter, updateDoc)
 			res.send(result)
+		})
+
+		// get 1 specific instructor's classes 
+		app.get('/classes/my-class/:email', async (req, res) => {
+			const selectedClass = req.params.email;
+			const query = { email : selectedClass };
+			const myClass = await classesCollection.findOne(query);
+			res.send(myClass);
+
+
 		})
 
 		// instructor data 
@@ -120,6 +131,17 @@ async function run() {
 			res.send(result)
 		})
 
+		// check isAdmin 
+		app.get('/users/admin/:email', async (req, res) => {
+			const email = req.params.email;
+			const query = { email: email };
+			const user = await usersCollection.findOne(query);
+			const result = { admin: user?.role === 'Admin' };
+			console.log(result);
+			res.send(result);
+
+		})
+
 		//  make instructor 
 		app.patch('/users/instructor/:id', async (req, res) => {
 			const id = req.params.id;
@@ -131,7 +153,19 @@ async function run() {
 				},
 			};
 			const result = await usersCollection.updateOne(filter, updateDoc)
-			res.send(result)
+			res.send(result);
+		})
+
+		// check isInstructor
+		app.get('/users/instructor/:email', async (req, res) => {
+			const email = req.params.email;
+			const query = { email: email };
+			const user = await usersCollection.findOne(query);
+			console.log({ user });
+			const result = { instructor: user?.role === 'Instructor' };
+			console.log(result);
+			res.send(result);
+
 		})
 
 		// make student 
@@ -145,7 +179,18 @@ async function run() {
 				},
 			};
 			const result = await usersCollection.updateOne(filter, updateDoc)
-			res.send(result)
+			res.send(result);
+		})
+
+		// check isStudent
+		app.get('/users/student/:email', async (req, res) => {
+			const email = req.params.email;
+			const query = { email: email };
+			const user = await usersCollection.findOne(query);
+			const result = { student: user?.role === 'Student' };
+			console.log(result);
+			res.send(result);
+
 		})
 
 		// delete any user 
@@ -219,18 +264,20 @@ async function run() {
 		})
 
 		// payment data store in server 
-		app.post('/course-payment', async (res, req) => {
+		app.post('/course-payment', async (req, res) => {
 			const payment = req.body;
+			console.log({ payment });
 			const insertResult = await coursePaymentCollection.insertOne(payment);
+			console.log({ insertResult });
 
 			const query = { _id: { $in: payment.classItems.map(id => new ObjectId(id)) } };
 			const deleteResult = await coursePaymentCollection.deleteMany(query)
 
-			res.send({insertResult, deleteResult});
+			res.send({ insertResult, deleteResult });
 		})
 
 		// payment history data 
-		app.get('/course-payment', async (res, req) => {})
+		app.get('/course-payment', async (res, req) => { })
 
 
 
