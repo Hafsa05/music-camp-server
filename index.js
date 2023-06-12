@@ -219,11 +219,18 @@ async function run() {
 		})
 
 		// payment data store in server 
-		app.post('/coursePayment', async (res, req) => {
+		app.post('/course-payment', async (res, req) => {
 			const payment = req.body;
-			const result = await coursePaymentCollection.insertOne(payment);
-			res.send(result);
+			const insertResult = await coursePaymentCollection.insertOne(payment);
+
+			const query = { _id: { $in: payment.classItems.map(id => new ObjectId(id)) } };
+			const deleteResult = await coursePaymentCollection.deleteMany(query)
+
+			res.send({insertResult, deleteResult});
 		})
+
+		// payment history data 
+		app.get('/course-payment', async (res, req) => {})
 
 
 
