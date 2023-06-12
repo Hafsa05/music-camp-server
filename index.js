@@ -83,7 +83,7 @@ async function run() {
 		// get 1 specific instructor's classes 
 		app.get('/classes/my-class/:email', async (req, res) => {
 			const selectedClass = req.params.email;
-			const query = { email : selectedClass };
+			const query = { email: selectedClass };
 			const myClass = await classesCollection.findOne(query);
 			res.send(myClass);
 
@@ -248,9 +248,11 @@ async function run() {
 
 		// create card payment intent 
 		app.post('/payment-intend', async (req, res) => {
-			const { courseFee } = req.body;
-			const amount = courseFee * 100;
-			console.log(courseFee, amount);
+			const courseFee = req.body;
+			const fee = parseInt(courseFee.courseFee)
+			console.log(fee);
+			const amount = parseInt(fee * 100);
+			// console.log(courseFee, amount);
 			const paymentIntent = await stripe.paymentIntents.create({
 				amount: amount,
 				currency: 'usd',
@@ -277,14 +279,16 @@ async function run() {
 		})
 
 		// payment history data 
-		app.get('/course-payment', async (res, req) => { })
-
-
+		// app.get('/course-payment', async (res, req) => {
+		// 	const result = await coursePaymentCollection.find().toArray();
+		// 	res.send(result);
+		// })
 
 		// Send a ping to confirm a successful connection
 		await client.db("admin").command({ ping: 1 });
 		console.log("Pinged your deployment. You successfully connected to MongoDB!");
-	} finally {
+	}
+	finally {
 		// Ensures that the client will close when you finish/error
 		// await client.close();
 	}
