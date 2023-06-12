@@ -3,6 +3,7 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
+const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY);
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -48,11 +49,34 @@ async function run() {
 		const instructorsCollection = client.db("musicCampDb").collection("instructors");
 		const usersCollection = client.db("musicCampDb").collection("users");
 		const courseCartCollection = client.db("musicCampDb").collection("courseCart");
+		const coursePaymentCollection = client.db("musicCampDb").collection("coursePayment");
 
-		// classes collection 
+		// class add to server 
+		app.post('/classes', async (req, res) => {
+			const course = req.body;
+			const result = await classesCollection.insertOne(course);
+			res.send(result);
+		})
+
+		// classes collection fetch from server
 		app.get('/classes', async (req, res) => {
 			const result = await classesCollection.find().toArray();
 			res.send(result);
+		})
+
+		// class status update
+		app.patch('/classes/music-class/:id', async (req, res) => {
+			const id = req.params.id;
+			// console.log(id);
+			const filter = { _id: new ObjectId(id) };
+			console.log(filter);
+			const updateDoc = {
+				$set: {
+					role: 'approved'
+				},
+			};
+			const result = await classesCollection.updateOne(filter, updateDoc)
+			res.send(result)
 		})
 
 		// instructor data 
@@ -110,6 +134,20 @@ async function run() {
 			res.send(result)
 		})
 
+		// make student 
+		app.patch('/users/student/:id', async (req, res) => {
+			const id = req.params.id;
+			const filter = { _id: new ObjectId(id) };
+			// console.log(filter);
+			const updateDoc = {
+				$set: {
+					role: 'Student'
+				},
+			};
+			const result = await usersCollection.updateOne(filter, updateDoc)
+			res.send(result)
+		})
+
 		// delete any user 
 		app.delete('/users/:id', async (req, res) => {
 			const id = req.params.id;
@@ -137,11 +175,12 @@ async function run() {
 				res.send([]);
 			}
 
+			// jwt token
 			// const decodedEmail = req.decoded.email;
 			// if (email !== decodedEmail) {
 			// 	return res.status(403).send({ error: true, message: 'Forbidden Access' })
 			// }
-			
+
 			const query = { email: email };
 			const result = await courseCartCollection.find(query).toArray();
 			res.send(result);
@@ -161,6 +200,31 @@ async function run() {
 			const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '24h' });
 			res.send({ token });
 		})
+
+		// create card payment intent 
+		app.post('/payment-intend', async (req, res) => {
+			const { courseFee } = req.body;
+			const amount = courseFee * 100;
+			console.log(courseFee, amount);
+			const paymentIntent = await stripe.paymentIntents.create({
+				amount: amount,
+				currency: 'usd',
+				payment_method_types: ['card']
+
+			});
+
+			res.send({
+				clientSecret: paymentIntent.client_secret
+			})
+		})
+
+		// payment data store in server 
+		app.post('/coursePayment', async (res, req) => {
+			const payment = req.body;
+			const result = await coursePaymentCollection.insertOne(payment);
+			res.send(result);
+		})
+
 
 
 		// Send a ping to confirm a successful connection
