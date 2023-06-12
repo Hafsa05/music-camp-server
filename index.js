@@ -230,7 +230,7 @@ async function run() {
 		})
 
 		// payment history data 
-		app.get('/course-payment', async (res, req) => {})
+		// app.get('/course-payment', async (res, req) => {})
 
 
 
